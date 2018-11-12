@@ -24,10 +24,8 @@ const main = async () => {
       enter(path) {
         if (hasOuterBinding(path, 'a')) {
           path.scope.push({
-            id: 'a',
-            init: types.expressionStatement(
-              types.stringLiteral('test'),
-            ),
+            id: types.identifier('a'),
+            init: types.numericLiteral(5),
             kind: 'const',
           });
         }
