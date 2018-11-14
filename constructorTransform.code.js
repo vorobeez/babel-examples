@@ -1,32 +1,36 @@
-function FirstConstructor(firstParam, secondParam) {
+export function FirstConstructor(firstParam, secondParam) {
   this.first = firstParam;
   this.second = second;
 }
 
-function firstUtilFunction(firstParam, secondParam) {
+export function firstUtilFunction(firstParam, secondParam) {
   return firstParam + secondParam;
 }
 
-function secondUtilFunction({ firstParam, secondParam }) {
+export function secondUtilFunction({ firstParam, secondParam }) {
   const result = firstUtilFunction(firstParam, secondParam);
 
   return result + 42;
 }
 
-function SecondConstructor({ firstParam, secondParam }) {
+export const SecondConstructor = function ({ firstParam, secondParam }) {
   this.third = firstParam + secondParam;
+  this.fourth = firstParam * secondParam;
   this.getThird = () => this.thrid;
-}
+  this.setThird = (third) => this.third = third;
+  this.getFourth = () => this.fourth;
+  this.setFourth = (fourth) => this.fourth = fourth;
+};
 
-SecondConstructor.prototype.getSomeInfo = function () {
+SecondConstructor.prototype.getProps = function () {
   return {
-    info: {},
+    third: this.third,
+    fourth: this.fourth,
   };
-}
+};
 
-SecondConstructor.prototype.getSomeMeta = function getSomeMeta() {
-  return {
-    meta: {},
-  };
-}
+SecondConstructor.prototype.setProps = function setProps({ third, fourth }) {
+  this.setThird(third);
+  this.setFourth(fourth);
+};
 
