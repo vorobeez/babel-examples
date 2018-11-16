@@ -1,3 +1,5 @@
+'use strict';
+
 const parser = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
 const types = require('@babel/types');
@@ -10,12 +12,46 @@ const readFile = util.promisify(fs.readFile);
 
 const FILE_PATH = path.resolve('./constructorTransform.code.js');
 
-// Здесь нужен traverse. Но он должен быть в пределах данной функции. Если зашли в другую, то нужен skip.
-const hasReturnStatement = (functionPath) =>
-  path.node.body.some(node => types.isReturnStatement(node));
+const UPPERCASE_PATTERN = /^[A-Z]/;
 
-// const isConstructorFunction = (path) => {
-// };
+const isUpperCase = (str) => UPPERCASE_PATTERN.test(str);
+
+const hasReturnStatement = (functionPath) => {
+  let returnStatementFound = false;
+
+  functionPath.traverse({
+    Function(path) {
+      path.skip();
+    },
+    ReturnStatement(path) {
+      returnStatementFound = true;
+      path.stop();
+    }
+  });
+
+  return returnStatementFound;
+};
+
+const getFunctionIdentifier = (functionPath) => {
+  if (functionPath.isFunctionDeclaration()) {
+    return functionPath.node.id;
+  }
+
+  if (functionPath.isFunctionExpression() && types.isVariableDeclarator(functionPath.parent)) {
+    return functionPath.parent.id;
+  }
+
+  return null;
+};
+
+const hasUpperCaseIdentifierName = (functionPath) => {
+  const identifier = getFunctionIdentifier(functionPath);
+
+  return identifier && isUpperCase(identifier.name);
+};
+
+const isFunctionConstructor = (functionPath) => 
+  !hasReturnStatement(functionPath) && hasUpperCaseIdentifierName(functionPath);
 
 const main = async () => {
   const fileBuffer = await readFile(FILE_PATH);
@@ -26,11 +62,9 @@ const main = async () => {
   });
 
   traverse(ast, {
-    // Здесь будет раздельная логика для FunctionDeclaration и FunctionExpression
-    Function: {
+    "FunctionDeclaration|FunctionExpression": {
       enter(path) {
-        if (!hasReturnStatement(path)) {
-          console.log('Type: ', path.node.type);
+        if (isFunctionConstructor(path)) {
           console.log('Node: ', path.node);
         }
       }
