@@ -53,6 +53,38 @@ const hasUpperCaseIdentifierName = (functionPath) => {
 const isFunctionConstructor = (functionPath) => 
   !hasReturnStatement(functionPath) && hasUpperCaseIdentifierName(functionPath);
 
+const buildClassDeclarationFromFunctionConstructor = (functionPath) => {
+  const identifier = getFunctionIdentifier(functionPath);
+
+  const classConstructor = types.classMethod(
+    'constructor',
+    types.identifier('constructor'),
+    functionPath.node.params,
+    functionPath.node.body,
+  );
+
+  const classBody = types.classBody([
+    classConstructor,
+  ]);
+
+  const classDeclaration = types.classDeclaration(
+    identifier,
+    null,
+    classBody,
+  );
+
+  return classDeclaration;
+};
+
+const replaceFunctionWithClassDeclaration = (functionPath, classDeclaration) => {
+  if (functionPath.isFunctionDeclaration()) {
+    functionPath.replaceWith(classDeclaration);
+    return;
+  }
+
+  functionPath.parentPath.replaceWith(classDeclaration);
+};
+
 const main = async () => {
   const fileBuffer = await readFile(FILE_PATH);
   const sourceCode = fileBuffer.toString();
@@ -65,7 +97,8 @@ const main = async () => {
     "FunctionDeclaration|FunctionExpression": {
       enter(path) {
         if (isFunctionConstructor(path)) {
-          console.log('Node: ', path.node);
+          const classDeclaration = buildClassDeclarationFromFunctionConstructor(path);
+          replaceFunctionWithClassDeclaration(path, classDeclaration);
         }
       }
     }
@@ -73,7 +106,7 @@ const main = async () => {
 
   const generatedCode = generate(ast, {}, sourceCode).code;
 
-  // console.log(generatedCode);
+  console.log(generatedCode);
 };
 
 main();
